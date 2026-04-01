@@ -1,1067 +1,521 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FW Company - Sistema de Acompanhamento de Obras</title>
+    <title>FW Company - Sistema de Gestão Documental EAP</title>
     <link rel="icon" type="image/x-icon" href="fw_mini.ico">
-    <!-- Font Awesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- ExcelJS e FileSaver -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0c10;
-            min-height: 100vh;
-            color: #e1e9f0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #1e293b;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #3b82f6;
-            border-radius: 4px;
-        }
-
-        .sidebar {
-            width: 280px;
-            background: #0f172a;
-            color: #e1e9f0;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid #2d3748;
-        }
-
-        .sidebar-header {
-            padding: 25px 20px;
-            text-align: center;
-            border-bottom: 1px solid #2d3748;
-        }
-
-        .sidebar-header img {
-            width: 160px;
-            height: 95px;
-            object-fit: contain;
-            margin-bottom: 10px;
-        }
-
-        .sidebar-header h3 {
-            font-size: 14px;
-            font-weight: 300;
-            color: #94a3b8;
-        }
-
-        .sidebar-menu {
-            flex: 1;
-            padding: 20px 10px;
-            overflow-y: auto;
-        }
-
-        .menu-item {
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #94a3b8;
-            cursor: pointer;
-            border-radius: 8px;
-            margin-bottom: 5px;
-            transition: all 0.3s;
-        }
-
-        .menu-item i {
-            font-size: 20px;
-            width: 24px;
-        }
-
-        .menu-item:hover {
-            background: #1e293b;
-            color: #60a5fa;
-        }
-
-        .menu-item.active {
-            background: #1e293b;
-            color: #60a5fa;
-            border-left: 3px solid #3b82f6;
-        }
-
-        .sidebar-footer {
-            padding: 20px;
-            border-top: 1px solid #2d3748;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .sidebar-footer img {
-            height: 35px;
-            width: auto;
-            object-fit: contain;
-            opacity: 0.8;
-        }
-
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            background: #0a0c10;
-        }
-
-        .top-bar {
-            background: #1a1f2b;
-            border-radius: 15px;
-            padding: 15px 25px;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border: 1px solid #2d3748;
-        }
-
-        .page-title {
-            font-size: 22px;
-            font-weight: 600;
-            color: #60a5fa;
-        }
-
-        .logos-secundarios {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .logos-secundarios img {
-            height: 40px;
-            width: auto;
-            object-fit: contain;
-        }
-
-        .content-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .card {
-            background: #1a1f2b;
-            border-radius: 15px;
-            padding: 25px;
-            border: 1px solid #2d3748;
-            animation: slideInUp 0.6s ease;
-            animation-fill-mode: both;
-        }
-
-        @keyframes slideInUp {
-            0% { transform: translateY(30px); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #2d3748;
-        }
-
-        .card-header h2 {
-            font-size: 16px;
-            color: #60a5fa;
-            font-weight: 600;
-        }
-
-        .badge {
-            background: #1e293b;
-            color: #60a5fa;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            border: 1px solid #3b82f6;
-        }
-
-        .badge-success { background: #059669; color: white; border-color: #10b981; }
-        .badge-warning { background: #d97706; color: white; border-color: #f59e0b; }
-        .badge-danger { background: #dc2626; color: white; border-color: #ef4444; }
-
-        .grid-2, .grid-3, .grid-4 {
-            display: grid;
-            gap: 20px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0c10; color: #e1e9f0; display: flex; height: 100vh; overflow: hidden; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
+        
+        /* Sidebar */
+        .sidebar { width: 300px; background: #0f172a; display: flex; flex-direction: column; border-right: 1px solid #2d3748; }
+        .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid #2d3748; }
+        .sidebar-header img { width: 140px; height: auto; object-fit: contain; margin-bottom: 10px; }
+        .sidebar-header h3 { font-size: 14px; font-weight: 300; color: #94a3b8; }
+        .sidebar-menu { flex: 1; padding: 20px 10px; overflow-y: auto; }
+        .menu-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; color: #94a3b8; cursor: pointer; border-radius: 8px; margin-bottom: 5px; transition: all 0.3s; }
+        .menu-item i { font-size: 20px; width: 24px; }
+        .menu-item:hover, .menu-item.active { background: #1e293b; color: #60a5fa; }
+        .menu-item.active { border-left: 3px solid #3b82f6; }
+        .sidebar-footer { padding: 20px; border-top: 1px solid #2d3748; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .sidebar-footer img { height: 35px; width: auto; object-fit: contain; opacity: 0.8; }
+        
+        /* Main Content */
+        .main-content { flex: 1; overflow-y: auto; padding: 20px; background: #0a0c10; }
+        .top-bar { background: #1a1f2b; border-radius: 15px; padding: 15px 25px; margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #2d3748; }
+        .page-title { font-size: 22px; font-weight: 600; color: #60a5fa; }
+        .logos-secundarios { display: flex; align-items: center; gap: 20px; }
+        .logos-secundarios img { height: 40px; width: auto; object-fit: contain; }
+        .content-container { display: flex; flex-direction: column; gap: 20px; }
+        
+        /* Cards */
+        .card { background: #1a1f2b; border-radius: 15px; padding: 25px; border: 1px solid #2d3748; animation: fadeInUp 0.5s ease; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #2d3748; }
+        .card-header h2 { font-size: 18px; color: #60a5fa; font-weight: 600; }
+        .badge { background: #1e293b; color: #60a5fa; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid #3b82f6; }
+        .badge-success { background: #059669; color: white; }
+        .badge-warning { background: #d97706; color: white; }
+        .badge-info { background: #3b82f6; color: white; }
+        
+        /* Grid */
+        .grid-2, .grid-3, .grid-4 { display: grid; gap: 20px; }
         .grid-2 { grid-template-columns: repeat(2, 1fr); }
         .grid-3 { grid-template-columns: repeat(3, 1fr); }
         .grid-4 { grid-template-columns: repeat(4, 1fr); }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-            color: #e1e9f0;
-        }
-
-        th {
-            background: #1e293b;
-            color: #94a3b8;
-            padding: 12px;
-            font-weight: 600;
-            text-align: left;
-            border-bottom: 2px solid #3b82f6;
-        }
-
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #334155;
-        }
-
-        tr:hover { background: #2d3748; }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #94a3b8;
-            font-weight: 500;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px 15px;
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #e1e9f0;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
+        
+        /* EAP Tree */
+        .eap-tree { margin-top: 20px; }
+        .eap-node { margin-left: 20px; padding-left: 20px; border-left: 2px solid #3b82f6; }
+        .eap-item { padding: 12px 15px; margin: 8px 0; background: #1e293b; border-radius: 8px; cursor: pointer; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center; }
+        .eap-item:hover { background: #2d3748; transform: translateX(5px); }
+        .eap-item.active { background: #3b82f6; color: white; }
+        .eap-code { font-family: monospace; font-weight: bold; color: #60a5fa; margin-right: 15px; }
+        .eap-name { flex: 1; }
+        .eap-count { background: #0f172a; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
+        
+        /* Documentos */
+        .document-card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 12px; border: 1px solid #334155; transition: all 0.3s; display: flex; align-items: center; gap: 15px; }
+        .document-card:hover { transform: translateY(-2px); border-color: #3b82f6; }
+        .document-icon { font-size: 32px; color: #3b82f6; }
+        .document-info { flex: 1; }
+        .document-title { font-weight: 600; color: #60a5fa; margin-bottom: 5px; }
+        .document-meta { font-size: 12px; color: #94a3b8; display: flex; gap: 15px; flex-wrap: wrap; }
+        .document-actions { display: flex; gap: 10px; }
+        
+        /* PO Items */
+        .po-item-row { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #334155; }
+        .total-value { font-size: 24px; font-weight: bold; color: #60a5fa; }
+        .item-remove { color: #dc2626; cursor: pointer; font-size: 12px; text-align: right; display: inline-block; padding: 5px 10px; }
+        .item-remove:hover { color: #ef4444; text-decoration: underline; }
+        
+        /* Upload Area */
+        .upload-area { background: #1e293b; border: 2px dashed #3b82f6; border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.3s; margin-bottom: 20px; }
+        .upload-area:hover { background: #2d3748; border-color: #60a5fa; }
+        .upload-area i { font-size: 48px; color: #3b82f6; margin-bottom: 15px; }
+        
+        /* Forms */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #94a3b8; font-weight: 500; font-size: 12px; text-transform: uppercase; }
+        .form-control { width: 100%; padding: 10px 15px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; font-size: 14px; color: #e1e9f0; }
+        .form-control:focus { outline: none; border-color: #3b82f6; }
+        select.form-control, textarea.form-control { background: #1e293b; }
+        
+        /* Buttons */
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
         .btn-primary { background: #3b82f6; color: white; }
         .btn-primary:hover { background: #2563eb; transform: translateY(-2px); }
         .btn-success { background: #059669; color: white; }
-        .btn-success:hover { background: #047857; transform: translateY(-2px); }
+        .btn-success:hover { background: #047857; }
         .btn-danger { background: #dc2626; color: white; }
-        .btn-danger:hover { background: #b91c1c; transform: translateY(-2px); }
         .btn-secondary { background: #475569; color: white; }
-
-        .progress {
-            height: 8px;
-            background: #1e293b;
-            border-radius: 4px;
-            overflow: hidden;
-            border: 1px solid #334155;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #60a5fa);
-            border-radius: 4px;
-            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .tabs {
-            display: flex;
-            gap: 2px;
-            border-bottom: 1px solid #2d3748;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            color: #94a3b8;
-            font-weight: 500;
-            font-size: 13px;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .tab:hover { color: #60a5fa; background: #1e293b; }
-        .tab.active { color: #60a5fa; border-bottom-color: #3b82f6; background: #1e293b; }
-
-        .tab-content { transition: opacity 0.4s ease; }
-
-        .logo-img {
-            height: 35px;
-            width: auto;
-            object-fit: contain;
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 12, 16, 0.95);
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            backdrop-filter: blur(8px);
-            transition: opacity 0.5s ease;
-        }
-
-        .loading-overlay.hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid #1e293b;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loading-progress {
-            width: 300px;
-            height: 4px;
-            background: #1e293b;
-            border-radius: 2px;
-            overflow: hidden;
-            margin-top: 20px;
-        }
-
-        .loading-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #60a5fa);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        .info-bar {
-            background: #1e3a5f;
-            color: #e1e9f0;
-            padding: 10px 20px;
-            margin: 0 0 20px 0;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            border-left: 5px solid #3b82f6;
-        }
-
-        .gauge-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px 0;
-        }
-
-        .gauge-container {
-            position: relative;
-            width: 200px;
-            height: 100px;
-            overflow: hidden;
-        }
-
-        .gauge-bg {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: #1e293b;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid #334155;
-        }
-
-        .gauge-fill {
-            position: absolute;
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: conic-gradient(from 0deg, #3b82f6 0deg, #60a5fa var(--progress-deg), transparent var(--progress-deg));
-            transform: rotate(-90deg);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .gauge-cover {
-            position: absolute;
-            width: 160px;
-            height: 160px;
-            border-radius: 50%;
-            background: #1a1f2b;
-            top: 20px;
-            left: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border: 1px solid #334155;
-        }
-
-        .gauge-value { font-size: 22px; font-weight: bold; color: #60a5fa; }
-        .gauge-label { font-size: 12px; color: #94a3b8; }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
-        }
-
-        .po-item-row {
-            background: #1e293b;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #334155;
-        }
-
-        .total-value { font-size: 24px; font-weight: bold; color: #60a5fa; }
-        .po-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-        .item-remove { color: #dc2626; cursor: pointer; font-size: 12px; text-align: right; display: inline-block; padding: 5px 10px; }
-        .item-remove:hover { color: #ef4444; text-decoration: underline; }
-        .table-responsive { overflow-x: auto; max-height: 500px; }
         .btn-sm { padding: 5px 12px; font-size: 12px; }
+        
+        /* Stats Cards */
+        .stat-card { background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #334155; }
+        .stat-value { font-size: 32px; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 12px; color: #94a3b8; margin-top: 5px; text-transform: uppercase; }
+        
+        /* Loading */
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,12,16,0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(8px); transition: opacity 0.5s; }
+        .loading-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .loading-spinner { width: 50px; height: 50px; border: 4px solid #1e293b; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .info-bar { background: #1e3a5f; padding: 10px 20px; margin-bottom: 20px; border-radius: 8px; display: flex; align-items: center; gap: 10px; border-left: 5px solid #3b82f6; }
+        .table-responsive { overflow-x: auto; }
+        .chart-container { height: 300px; position: relative; }
+        .action-buttons { display: flex; gap: 8px; }
+        
+        /* Tabs */
+        .tabs { display: flex; gap: 5px; border-bottom: 1px solid #2d3748; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab { padding: 10px 20px; cursor: pointer; color: #94a3b8; font-weight: 500; border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .tab:hover, .tab.active { color: #60a5fa; }
+        .tab.active { border-bottom-color: #3b82f6; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
-
 <body>
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-spinner"></div>
-        <div class="loading-progress"><div class="loading-progress-bar" id="loadingProgressBar"></div></div>
-        <div class="loading-text" id="loadingText" style="margin-top: 20px; color: #94a3b8;">Inicializando sistema...</div>
+        <div id="loadingText" style="color:#94a3b8;">Carregando sistema...</div>
     </div>
 
     <div class="sidebar">
         <div class="sidebar-header">
-            <img src="FW Logo.png" alt="FW Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-            <div style="display:none; font-size:24px; font-weight:bold; color:#3b82f6;">FW</div>
-            <h3>Planejamento e Controle de Manutenção 1.0_rev07</h3>
+            <img src="FW Logo.png" alt="FW Logo" onerror="this.style.display='none'">
+            <h3>Sistema P.C. e Documentações</h3>
         </div>
         <div class="sidebar-menu">
-            <div class="menu-item active" onclick="changePage('dashboard', event)"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></div>
-            <div class="menu-item" onclick="changePage('projetos', event)"><i class="fas fa-hard-hat"></i><span>Projetos</span></div>
-            <div class="menu-item" onclick="changePage('ss', event)"><i class="fas fa-clipboard-list"></i><span>SS/Ordem de Compra</span></div>
+            <div class="menu-item active" onclick="changePage('dashboard', event)"><i class="fas fa-chart-pie"></i><span>Dashboard</span></div>
+            <div class="menu-item" onclick="changePage('eap', event)"><i class="fas fa-diagram-project"></i><span>EAP - Estrutura</span></div>
+            <div class="menu-item" onclick="changePage('documentos', event)"><i class="fas fa-folder-open"></i><span>Documentos</span></div>
+            <div class="menu-item" onclick="changePage('upload', event)"><i class="fas fa-upload"></i><span>Upload</span></div>
             <div class="menu-item" onclick="changePage('pedido_compra', event)"><i class="fas fa-shopping-cart"></i><span>Pedido de Compra</span></div>
-            <div class="menu-item" onclick="changePage('os', event)"><i class="fas fa-tasks"></i><span>Ordem de Serviço</span></div>
-            <div class="menu-item" onclick="changePage('rdo', event)"><i class="fas fa-file-alt"></i><span>Gerar RDO</span></div>
-            <div class="menu-item" onclick="changePage('hht', event)"><i class="fas fa-users"></i><span>HHT/Mão de Obra</span></div>
-            <div class="menu-item" onclick="changePage('cronograma', event)"><i class="fas fa-calendar-alt"></i><span>Cronograma</span></div>
-            <div class="menu-item" onclick="changePage('indicadores', event)"><i class="fas fa-chart-line"></i><span>Indicadores</span></div>
         </div>
         <div class="sidebar-footer">
-            <img src="Delservin LOGO.png" alt="Delservin" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-            <span style="display:none;">Delservin</span>
-            <img src="Altercon LOGO.png" alt="Altercon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-            <span style="display:none;">Altercon</span>
+            <img src="Delservin LOGO.png" alt="Delservin">
+            <img src="Altercon LOGO.png" alt="Altercon">
         </div>
     </div>
 
     <div class="main-content">
         <div class="top-bar">
-            <div class="page-title" id="pageTitle">Dashboard</div>
+            <div class="page-title" id="pageTitle">Dashboard EAP</div>
             <div class="logos-secundarios">
                 <img src="Delservin LOGO.png" alt="Delservin">
                 <img src="Altercon LOGO.png" alt="Altercon">
             </div>
         </div>
-
-        <div class="info-bar" id="infoBar" style="display: none;">
-            <i class="fas fa-cloud" id="infoIcon"></i>
-            <span id="infoMessage">Sistema carregado</span>
-        </div>
-
+        <div class="info-bar" id="infoBar" style="display: none;"><i class="fas fa-info-circle"></i><span id="infoMessage"></span></div>
         <div class="content-container" id="contentArea"></div>
     </div>
 
     <script>
-        // Dados dos projetos com Curva S completa
-        const projetos = [
-            { 
-                id: 1,
-                nome: 'SUZANO IMPERATRIZ - NR-17 EIA SECAGEM', 
-                logo: 'Suzano LOGO 2.png',
-                progresso: 35,
-                inicio: '2025-09-15',
-                fim: '2026-01-15',
-                responsavel: 'J. Emílio M. Gálvez',
-                curvaS: [
-                    { mes: 'Set', dia: '15', realAcum: 2, lbAcum: 3, forecast2: 3 },
-                    { mes: 'Set', dia: '22', realAcum: 5, lbAcum: 6, forecast2: 6 },
-                    { mes: 'Set', dia: '29', realAcum: 8, lbAcum: 10, forecast2: 10 },
-                    { mes: 'Out', dia: '06', realAcum: 12, lbAcum: 15, forecast2: 14 },
-                    { mes: 'Out', dia: '13', realAcum: 16, lbAcum: 20, forecast2: 18 },
-                    { mes: 'Out', dia: '20', realAcum: 20, lbAcum: 25, forecast2: 22 },
-                    { mes: 'Out', dia: '27', realAcum: 24, lbAcum: 30, forecast2: 26 },
-                    { mes: 'Nov', dia: '03', realAcum: 28, lbAcum: 36, forecast2: 30 },
-                    { mes: 'Nov', dia: '10', realAcum: 32, lbAcum: 42, forecast2: 34 },
-                    { mes: 'Nov', dia: '17', realAcum: 35, lbAcum: 48, forecast2: 38 },
-                    { mes: 'Nov', dia: '24', realAcum: 35, lbAcum: 54, forecast2: 42 },
-                    { mes: 'Dez', dia: '01', realAcum: 35, lbAcum: 60, forecast2: 46 },
-                    { mes: 'Dez', dia: '08', realAcum: 35, lbAcum: 66, forecast2: 50 },
-                    { mes: 'Dez', dia: '15', realAcum: 35, lbAcum: 72, forecast2: 54 },
-                    { mes: 'Dez', dia: '22', realAcum: 35, lbAcum: 78, forecast2: 58 },
-                    { mes: 'Dez', dia: '29', realAcum: 35, lbAcum: 84, forecast2: 62 },
-                    { mes: 'Jan', dia: '05', realAcum: 35, lbAcum: 90, forecast2: 66 },
-                    { mes: 'Jan', dia: '12', realAcum: 35, lbAcum: 96, forecast2: 70 }
-                ],
-                cronograma: [
-                    { atividade: 'Mobilização', inicio: '2025-09-15', fim: '2025-09-30', progresso: 100 },
-                    { atividade: 'Instalação de Containers', inicio: '2025-09-20', fim: '2025-10-05', progresso: 100 },
-                    { atividade: 'Montagem de Painéis Elétricos', inicio: '2025-10-01', fim: '2025-10-30', progresso: 85 },
-                    { atividade: 'Instalação de Exaustores', inicio: '2025-10-15', fim: '2025-11-15', progresso: 60 },
-                    { atividade: 'Testes de Funcionamento', inicio: '2025-11-10', fim: '2025-11-30', progresso: 30 },
-                    { atividade: 'Comissionamento', inicio: '2025-12-01', fim: '2025-12-20', progresso: 10 }
-                ],
-                hht: { previstas: 2500, realizadas: 1875, produtividade: 75, diasSemAcidente: 127, taxaFrequencia: 0, taxaGravidade: 0 },
-                progressoPacotes: { engenharia: 45, fornecimento: 30, montagem: 35, comissionamento: 15 }
-            },
-            { 
-                id: 2,
-                nome: 'SUZANO LIMEIRA - EUCAFLUFF', 
-                logo: 'Suzano LOGO 2.png',
-                progresso: 92,
-                inicio: '2025-10-01',
-                fim: '2026-03-31',
-                responsavel: 'J. Emílio M. Gálvez',
-                curvaS: [
-                    { mes: 'Out', dia: '01', realAcum: 2, lbAcum: 2, forecast2: 2 },
-                    { mes: 'Out', dia: '08', realAcum: 5, lbAcum: 5, forecast2: 5 },
-                    { mes: 'Out', dia: '15', realAcum: 10, lbAcum: 9, forecast2: 10 },
-                    { mes: 'Out', dia: '22', realAcum: 15, lbAcum: 14, forecast2: 15 },
-                    { mes: 'Out', dia: '29', realAcum: 22, lbAcum: 20, forecast2: 22 },
-                    { mes: 'Nov', dia: '05', realAcum: 30, lbAcum: 27, forecast2: 30 },
-                    { mes: 'Nov', dia: '12', realAcum: 38, lbAcum: 35, forecast2: 38 },
-                    { mes: 'Nov', dia: '19', realAcum: 47, lbAcum: 44, forecast2: 47 },
-                    { mes: 'Nov', dia: '26', realAcum: 56, lbAcum: 54, forecast2: 56 },
-                    { mes: 'Dez', dia: '03', realAcum: 65, lbAcum: 64, forecast2: 65 },
-                    { mes: 'Dez', dia: '10', realAcum: 74, lbAcum: 74, forecast2: 74 },
-                    { mes: 'Dez', dia: '17', realAcum: 82, lbAcum: 83, forecast2: 82 },
-                    { mes: 'Dez', dia: '24', realAcum: 88, lbAcum: 91, forecast2: 88 },
-                    { mes: 'Dez', dia: '31', realAcum: 92, lbAcum: 97, forecast2: 92 },
-                    { mes: 'Jan', dia: '07', realAcum: 92, lbAcum: 100, forecast2: 94 },
-                    { mes: 'Jan', dia: '14', realAcum: 92, lbAcum: 100, forecast2: 96 },
-                    { mes: 'Jan', dia: '21', realAcum: 92, lbAcum: 100, forecast2: 98 },
-                    { mes: 'Jan', dia: '28', realAcum: 92, lbAcum: 100, forecast2: 100 }
-                ],
-                cronograma: [
-                    { atividade: 'Mobilização', inicio: '2025-10-01', fim: '2025-10-15', progresso: 100 },
-                    { atividade: 'Engenharia de Detalhamento', inicio: '2025-10-05', fim: '2025-11-15', progresso: 100 },
-                    { atividade: 'Fornecimento de Materiais', inicio: '2025-10-20', fim: '2025-12-10', progresso: 95 },
-                    { atividade: 'Montagem Mecânica', inicio: '2025-11-01', fim: '2026-01-15', progresso: 88 },
-                    { atividade: 'Montagem Elétrica', inicio: '2025-11-15', fim: '2026-02-10', progresso: 85 },
-                    { atividade: 'Comissionamento', inicio: '2026-02-01', fim: '2026-03-15', progresso: 70 },
-                    { atividade: 'Entrega Final', inicio: '2026-03-16', fim: '2026-03-31', progresso: 50 }
-                ],
-                hht: { previstas: 3800, realizadas: 3496, produtividade: 92, diasSemAcidente: 180, taxaFrequencia: 0, taxaGravidade: 0 },
-                progressoPacotes: { engenharia: 100, fornecimento: 95, montagem: 86, comissionamento: 70 }
-            },
-            { 
-                id: 3,
-                nome: 'ENEVA Imperatriz-MA', 
-                logo: 'ENEVA LOGO.png',
-                progresso: 65,
-                inicio: '2026-01-15',
-                fim: '2026-08-30',
-                responsavel: 'J. Emílio M. Gálvez',
-                curvaS: [
-                    { mes: 'Jan', dia: '15', realAcum: 0, lbAcum: 0, forecast2: 0 },
-                    { mes: 'Jan', dia: '22', realAcum: 2, lbAcum: 3, forecast2: 2 },
-                    { mes: 'Jan', dia: '29', realAcum: 5, lbAcum: 7, forecast2: 5 },
-                    { mes: 'Fev', dia: '05', realAcum: 9, lbAcum: 12, forecast2: 9 },
-                    { mes: 'Fev', dia: '12', realAcum: 14, lbAcum: 18, forecast2: 14 },
-                    { mes: 'Fev', dia: '19', realAcum: 20, lbAcum: 25, forecast2: 20 },
-                    { mes: 'Fev', dia: '26', realAcum: 27, lbAcum: 33, forecast2: 27 },
-                    { mes: 'Mar', dia: '05', realAcum: 35, lbAcum: 42, forecast2: 35 },
-                    { mes: 'Mar', dia: '12', realAcum: 44, lbAcum: 52, forecast2: 44 },
-                    { mes: 'Mar', dia: '19', realAcum: 54, lbAcum: 62, forecast2: 54 },
-                    { mes: 'Mar', dia: '26', realAcum: 65, lbAcum: 72, forecast2: 65 },
-                    { mes: 'Abr', dia: '02', realAcum: 65, lbAcum: 81, forecast2: 70 }
-                ],
-                cronograma: [
-                    { atividade: 'Mobilização', inicio: '2026-01-15', fim: '2026-01-30', progresso: 100 },
-                    { atividade: 'Engenharia', inicio: '2026-01-20', fim: '2026-03-15', progresso: 85 },
-                    { atividade: 'Suprimentos', inicio: '2026-02-01', fim: '2026-04-30', progresso: 70 },
-                    { atividade: 'Montagem Civil', inicio: '2026-03-01', fim: '2026-05-30', progresso: 55 },
-                    { atividade: 'Montagem Mecânica', inicio: '2026-04-01', fim: '2026-07-15', progresso: 40 },
-                    { atividade: 'Comissionamento', inicio: '2026-07-01', fim: '2026-08-30', progresso: 10 }
-                ],
-                hht: { previstas: 4200, realizadas: 2730, produtividade: 65, diasSemAcidente: 45, taxaFrequencia: 0, taxaGravidade: 0 },
-                progressoPacotes: { engenharia: 85, fornecimento: 70, montagem: 48, comissionamento: 10 }
-            },
-            { 
-                id: 4,
-                nome: 'PEROXIDOS_SOLVAY - PROJETO PALACE', 
-                logo: 'Peroxidos LOGO.png',
-                progresso: 78,
-                inicio: '2025-10-10',
-                fim: '2026-06-30',
-                responsavel: 'J. Emílio M. Gálvez',
-                curvaS: [
-                    { mes: 'Out', dia: '10', realAcum: 1, lbAcum: 1, forecast2: 1 },
-                    { mes: 'Out', dia: '17', realAcum: 4, lbAcum: 4, forecast2: 4 },
-                    { mes: 'Out', dia: '24', realAcum: 8, lbAcum: 8, forecast2: 8 },
-                    { mes: 'Out', dia: '31', realAcum: 13, lbAcum: 13, forecast2: 13 },
-                    { mes: 'Nov', dia: '07', realAcum: 19, lbAcum: 19, forecast2: 19 },
-                    { mes: 'Nov', dia: '14', realAcum: 26, lbAcum: 26, forecast2: 26 },
-                    { mes: 'Nov', dia: '21', realAcum: 34, lbAcum: 34, forecast2: 34 },
-                    { mes: 'Nov', dia: '28', realAcum: 43, lbAcum: 43, forecast2: 43 },
-                    { mes: 'Dez', dia: '05', realAcum: 53, lbAcum: 53, forecast2: 53 },
-                    { mes: 'Dez', dia: '12', realAcum: 64, lbAcum: 64, forecast2: 64 },
-                    { mes: 'Dez', dia: '19', realAcum: 75, lbAcum: 75, forecast2: 75 },
-                    { mes: 'Dez', dia: '26', realAcum: 78, lbAcum: 86, forecast2: 78 },
-                    { mes: 'Jan', dia: '02', realAcum: 78, lbAcum: 92, forecast2: 80 }
-                ],
-                cronograma: [
-                    { atividade: 'Planejamento', inicio: '2025-10-10', fim: '2025-10-25', progresso: 100 },
-                    { atividade: 'Engenharia', inicio: '2025-10-15', fim: '2025-12-15', progresso: 95 },
-                    { atividade: 'Aquisições', inicio: '2025-11-01', fim: '2026-01-31', progresso: 88 },
-                    { atividade: 'Montagem', inicio: '2025-12-01', fim: '2026-04-30', progresso: 72 },
-                    { atividade: 'Testes', inicio: '2026-04-01', fim: '2026-06-15', progresso: 45 },
-                    { atividade: 'Entrega', inicio: '2026-06-16', fim: '2026-06-30', progresso: 20 }
-                ],
-                hht: { previstas: 5600, realizadas: 4368, produtividade: 78, diasSemAcidente: 92, taxaFrequencia: 0, taxaGravidade: 0 },
-                progressoPacotes: { engenharia: 95, fornecimento: 88, montagem: 72, comissionamento: 45 }
-            }
+        // Configuração Supabase
+        const SUPABASE_URL = 'https://eokhafnfmynhridksnuh.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVva2hhZm5mbXluaHJpZGtzbnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1MjE2MDAsImV4cCI6MjA1MDA5NzYwMH0.0z0ZvZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZm';
+        let supabaseClient = null;
+        
+        // EAP Estrutura
+        const eapStructure = [
+            { code: '1.0', name: 'Projeto Industrial - Fábrica', level: 1, parent: null },
+            { code: '1.1', name: 'Gestão de Projeto', level: 2, parent: '1.0' },
+            { code: '1.1.1', name: 'Plano de Projeto e Cronograma', level: 3, parent: '1.1' },
+            { code: '1.1.2', name: 'Relatórios de Progresso', level: 3, parent: '1.1' },
+            { code: '1.1.3', name: 'Documentação de Riscos', level: 3, parent: '1.1' },
+            { code: '1.2', name: 'Engenharia - Documentos Técnicos', level: 2, parent: '1.0' },
+            { code: '1.2.1', name: 'Engenharia Básica (P&IDs, Fluxogramas)', level: 3, parent: '1.2' },
+            { code: '1.2.2', name: 'Engenharia Detalhada', level: 3, parent: '1.2' },
+            { code: '1.2.3', name: 'Data Sheets de Equipamentos', level: 3, parent: '1.2' },
+            { code: '1.3', name: 'Aquisições - Documentos de Compras', level: 2, parent: '1.0' },
+            { code: '1.3.1', name: 'Requisições de Materiais', level: 3, parent: '1.3' },
+            { code: '1.3.2', name: 'Ordens de Compra', level: 3, parent: '1.3' },
+            { code: '1.3.3', name: 'Pedidos de Compra (PC)', level: 3, parent: '1.3' },
+            { code: '1.4', name: 'Construção e Montagem', level: 2, parent: '1.0' },
+            { code: '1.4.1', name: 'Planos de Rigging', level: 3, parent: '1.4' },
+            { code: '1.4.2', name: 'Procedimentos de Solda', level: 3, parent: '1.4' },
+            { code: '1.4.3', name: 'Diários de Obra (RDO)', level: 3, parent: '1.4' },
+            { code: '1.5', name: 'Comissionamento e Entrega', level: 2, parent: '1.0' },
+            { code: '1.5.1', name: 'Protocolos de Teste', level: 3, parent: '1.5' },
+            { code: '1.5.2', name: 'Manuais de Operação (As-Built)', level: 3, parent: '1.5' }
         ];
-
-        // Purchase Orders Database
+        
+        let documentos = [];
+        let selectedEapNode = null;
+        
+        // Pedidos de Compra
         let purchaseOrders = [
-            {
-                id: 38454,
-                numero: '38454',
-                data: '2024-04-05',
-                fornecedor: 'Zagar Comercio de Ferramentas e Ferragens LTDA EPP',
-                cnpj: '01.864.998/0001-35',
-                vendedor: 'Robinson',
-                centroCusto: 'PC 4501089929 - ANDRITZ - Bracell Lençóis Paulista - Montagem Tissue',
-                requisitante: 'Fabio Mendes',
-                condicaoPagamento: 'Boleto',
-                status: 'Em Andamento',
-                items: [
-                    { descricao: 'TRENA 5M LUFKIN', unidade: 'und', quantidade: 6, precoUnitario: 24.21, total: 145.26 },
-                    { descricao: 'BALDE PLAST PEDREIRO 12L', unidade: 'und', quantidade: 1, precoUnitario: 19.30, total: 19.30 },
-                    { descricao: 'FUNIL FLEX PLAST', unidade: 'und', quantidade: 1, precoUnitario: 29.42, total: 29.42 },
-                    { descricao: 'ENGATE RAPIDO PVC 1/2 TRAPP', unidade: 'und', quantidade: 1, precoUnitario: 5.89, total: 5.89 },
-                    { descricao: 'PINO ENGATE PVC 1/2 ADAPTAD', unidade: 'und', quantidade: 1, precoUnitario: 4.20, total: 4.20 },
-                    { descricao: 'MANG JARDIM FLEX 1/2X2,5 TRANC', unidade: 'und', quantidade: 10, precoUnitario: 6.03, total: 60.30 },
-                    { descricao: 'NIVEL BASE MAGNETICA KALA 30CM', unidade: 'und', quantidade: 5, precoUnitario: 35.22, total: 176.10 }
-                ],
-                desconto: 10.57,
-                frete: 0
-            }
+            { id: 38454, numero: '38454', data: '2024-04-05', fornecedor: 'Zagar Comercio de Ferramentas e Ferragens LTDA EPP', cnpj: '01.864.998/0001-35', vendedor: 'Robinson', centroCusto: 'PC 4501089929 - ANDRITZ - Bracell Lençóis Paulista - Montagem Tissue', requisitante: 'Fabio Mendes', condicaoPagamento: 'Boleto', status: 'Em Andamento', items: [
+                { descricao: 'TRENA 5M LUFKIN', unidade: 'und', quantidade: 6, precoUnitario: 24.21, total: 145.26 },
+                { descricao: 'BALDE PLAST PEDREIRO 12L', unidade: 'und', quantidade: 1, precoUnitario: 19.30, total: 19.30 },
+                { descricao: 'FUNIL FLEX PLAST', unidade: 'und', quantidade: 1, precoUnitario: 29.42, total: 29.42 },
+                { descricao: 'NIVEL BASE MAGNETICA KALA 30CM', unidade: 'und', quantidade: 5, precoUnitario: 35.22, total: 176.10 }
+            ], desconto: 10.57, frete: 0 }
         ];
-
         let nextPoId = 38455;
-
-        function updateLoadingProgress(percent, message) {
-            const progressBar = document.getElementById('loadingProgressBar');
-            const loadingText = document.getElementById('loadingText');
-            if (progressBar) progressBar.style.width = percent + '%';
-            if (loadingText) loadingText.textContent = message;
-        }
-
-        function hideLoading() {
+        
+        function showLoading(msg) { 
+            const el = document.getElementById('loadingText');
+            if (el) el.textContent = msg; 
             const overlay = document.getElementById('loadingOverlay');
-            if (overlay) overlay.classList.add('hidden');
+            if (overlay) overlay.classList.remove('hidden'); 
         }
-
-        function showInfo(message, type = 'info') {
-            const infoBar = document.getElementById('infoBar');
-            const infoMessage = document.getElementById('infoMessage');
-            const infoIcon = document.getElementById('infoIcon');
-            infoMessage.innerHTML = message;
-            if (type === 'success') { infoBar.style.background = '#065f46'; infoIcon.className = 'fas fa-check-circle'; }
-            else if (type === 'error') { infoBar.style.background = '#7f1d1d'; infoIcon.className = 'fas fa-exclamation-circle'; }
-            else { infoBar.style.background = '#1e3a5f'; infoIcon.className = 'fas fa-cloud'; }
-            infoBar.style.display = 'flex';
-            setTimeout(() => { infoBar.style.display = 'none'; }, 5000);
+        function hideLoading() { 
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.classList.add('hidden'); 
         }
-
-        function renderGauge(progresso) {
-            const degrees = (progresso / 100) * 180;
-            return `
-                <div class="gauge-wrapper">
-                    <div class="gauge-container">
-                        <div class="gauge-bg"><div class="gauge-fill" style="--progress-deg: ${degrees}deg;"></div></div>
-                        <div class="gauge-cover"><span class="gauge-value">${progresso}%</span><span class="gauge-label">Progresso</span></div>
-                    </div>
-                </div>
-            `;
+        function showInfo(msg, type = 'info') { 
+            let bar = document.getElementById('infoBar'), msgSpan = document.getElementById('infoMessage');
+            if (!bar || !msgSpan) return;
+            msgSpan.textContent = msg;
+            bar.style.background = type === 'success' ? '#065f46' : type === 'error' ? '#7f1d1d' : '#1e3a5f';
+            bar.style.display = 'flex';
+            setTimeout(() => bar.style.display = 'none', 4000);
         }
-
-        function renderCurvaSChart(curvaSData, containerId) {
-            if (!curvaSData || curvaSData.length === 0) return;
-            setTimeout(() => {
-                const canvas = document.getElementById(containerId);
-                if (!canvas) return;
-                const labels = curvaSData.map(item => `${item.mes}/${item.dia}`);
-                const realAcum = curvaSData.map(item => item.realAcum);
-                const lbAcum = curvaSData.map(item => item.lbAcum);
-                const forecast = curvaSData.map(item => item.forecast2);
-                const ctx = canvas.getContext('2d');
-                let existingChart = Chart.getChart(ctx);
-                if (existingChart) existingChart.destroy();
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            { label: 'Real Acumulado', data: realAcum, borderColor: '#3b82f6', borderWidth: 3, tension: 0.1, fill: false, pointBackgroundColor: '#3b82f6', pointRadius: 3 },
-                            { label: 'Line Base', data: lbAcum, borderColor: '#f59e0b', borderWidth: 3, tension: 0.1, fill: false, pointBackgroundColor: '#f59e0b', pointRadius: 3 },
-                            { label: 'Forecast', data: forecast, borderColor: '#10b981', borderWidth: 3, borderDash: [5, 5], tension: 0.1, fill: false, pointBackgroundColor: '#10b981', pointRadius: 3 }
-                        ]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { backgroundColor: '#1e293b', titleColor: '#60a5fa' } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', maxRotation: 45 } } } }
-                });
-            }, 200);
-        }
-
-        function changePage(page, event) {
-            if (event) {
-                document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
-                event.currentTarget.classList.add('active');
+        
+        async function loadDocumentosFromSupabase() {
+            if (!supabaseClient) supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            try {
+                const { data, error } = await supabaseClient.from('documentos').select('*').order('data_upload', { ascending: false });
+                if (error) throw error;
+                documentos = data || [];
+                return documentos;
+            } catch (error) {
+                console.error('Erro:', error);
+                return [];
             }
-            const titles = { 'dashboard': 'Dashboard', 'projetos': 'Projetos', 'ss': 'Abertura de SS/Ordem de Compra', 'pedido_compra': 'Sistema de Pedido de Compra', 'os': 'Ordem de Serviço', 'rdo': 'Gerar RDO', 'hht': 'HHT e Mão de Obra', 'cronograma': 'Cronograma', 'indicadores': 'Indicadores e Controles' };
-            document.getElementById('pageTitle').textContent = titles[page];
-            loadContent(page);
         }
-
-        function loadContent(page) {
-            const contentArea = document.getElementById('contentArea');
-            contentArea.style.opacity = '0';
-            setTimeout(() => {
-                switch (page) {
-                    case 'dashboard': contentArea.innerHTML = renderDashboard(); break;
-                    case 'projetos': contentArea.innerHTML = renderProjetos(); break;
-                    case 'ss': contentArea.innerHTML = renderSS(); break;
-                    case 'pedido_compra': contentArea.innerHTML = renderPedidoCompra(); break;
-                    case 'os': contentArea.innerHTML = renderOS(); break;
-                    case 'rdo': contentArea.innerHTML = renderRDO(); break;
-                    case 'hht': contentArea.innerHTML = renderHHT(); break;
-                    case 'cronograma': contentArea.innerHTML = renderCronograma(); break;
-                    case 'indicadores': contentArea.innerHTML = renderIndicadores(); break;
-                }
-                contentArea.style.opacity = '1';
-                setTimeout(() => {
-                    projetos.forEach(projeto => {
-                        if (document.getElementById(`curvaSChart-${projeto.id}`)) {
-                            renderCurvaSChart(projeto.curvaS, `curvaSChart-${projeto.id}`);
-                        }
-                    });
-                }, 500);
-            }, 300);
+        
+        function getDocumentsByEapCode(eapCode) { return documentos.filter(doc => doc.eap_code === eapCode); }
+        
+        function renderEapTree(selectedCode = null) {
+            const buildTree = (parentCode) => {
+                const nodes = eapStructure.filter(node => node.parent === parentCode);
+                if (nodes.length === 0) return '';
+                return nodes.map(node => `
+                    <div class="eap-node">
+                        <div class="eap-item ${selectedCode === node.code ? 'active' : ''}" onclick="selectEapNode('${node.code}')">
+                            <span class="eap-code">${node.code}</span>
+                            <span class="eap-name">${node.name}</span>
+                            <span class="eap-count">${getDocumentsByEapCode(node.code).length} docs</span>
+                        </div>
+                        ${buildTree(node.code)}
+                    </div>
+                `).join('');
+            };
+            return `<div class="eap-tree">${buildTree(null)}</div>`;
         }
-
+        
         function renderDashboard() {
+            const totalDocs = documentos.length;
+            const eapComDocs = eapStructure.filter(node => getDocumentsByEapCode(node.code).length > 0);
+            const progressoDocumental = eapStructure.length > 0 ? (eapComDocs.length / eapStructure.length * 100).toFixed(1) : 0;
+            const totalPedidos = purchaseOrders.length;
+            const valorTotalPedidos = purchaseOrders.reduce((sum, po) => sum + (po.items.reduce((s,i)=>s+i.total,0) - po.desconto + po.frete), 0);
+            
             return `
                 <div class="grid-3">
-                    ${projetos.map(projeto => `
-                        <div class="card">
-                            <div class="card-header"><h2>${projeto.nome}</h2><span class="badge">${projeto.progresso}%</span></div>
-                            ${renderGauge(projeto.progresso)}
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
-                                <span style="font-size: 13px;">${new Date(projeto.inicio).toLocaleDateString()} - ${new Date(projeto.fim).toLocaleDateString()}</span>
-                                <img src="${projeto.logo}" class="logo-img" alt="logo" onerror="this.src='fw_mini.ico'">
-                            </div>
-                        </div>
-                    `).join('')}
+                    <div class="stat-card"><div class="stat-value">${totalDocs}</div><div class="stat-label">Total de Documentos</div></div>
+                    <div class="stat-card"><div class="stat-value">${eapComDocs.length}</div><div class="stat-label">EAPs com Documentos</div></div>
+                    <div class="stat-card"><div class="stat-value">${progressoDocumental}%</div><div class="stat-label">Progresso Documental</div></div>
+                </div>
+                <div class="grid-3">
+                    <div class="stat-card"><div class="stat-value">${totalPedidos}</div><div class="stat-label">Pedidos de Compra</div></div>
+                    <div class="stat-card"><div class="stat-value">R$ ${valorTotalPedidos.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div><div class="stat-label">Valor Total em PC</div></div>
+                    <div class="stat-card"><div class="stat-value">${purchaseOrders.filter(p => p.status === 'Em Andamento').length}</div><div class="stat-label">PCs em Andamento</div></div>
                 </div>
                 <div class="card">
-                    <div class="card-header"><h2>Fluxo de OS</h2></div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #1e293b; border-radius: 8px; flex-wrap: wrap; gap: 10px;">
-                        <span>Identificação</span> <i class="fas fa-arrow-right"></i> <span>Abertura SS</span> <i class="fas fa-arrow-right"></i>
-                        <span>Triagem</span> <i class="fas fa-arrow-right"></i> <span>Gerar OS</span> <i class="fas fa-arrow-right"></i>
-                        <span>Programação</span> <i class="fas fa-arrow-right"></i> <span>Execução</span> <i class="fas fa-arrow-right"></i> <span>Fechamento</span>
-                    </div>
+                    <div class="card-header"><h2><i class="fas fa-diagram-project"></i> EAP com Documentos</h2></div>
+                    <div class="table-responsive"><table style="width:100%"><thead><tr><th>Código EAP</th><th>Nome</th><th>Documentos</th> </thead><tbody>${eapComDocs.map(node => `
+
+
+<td><strong>${node.code}</strong>${node.name}<span class="badge">${getDocumentsByEapCode(node.code).length}</span>`).join('')}</tbody></table></div>
                 </div>
             `;
         }
-
-        function renderProjetos() {
-            return projetos.map(projeto => `
-                <div class="card">
-                    <div class="card-header">
-                        <h2>${projeto.nome}</h2>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <span class="badge">${projeto.progresso}%</span>
-                            <img src="${projeto.logo}" class="logo-img" alt="logo" onerror="this.src='fw_mini.ico'">
-                        </div>
-                    </div>
-                    <div class="tabs">
-                        <div class="tab active" onclick="showProjectTab(this, 'visao-${projeto.id}')">Visão Geral</div>
-                        <div class="tab" onclick="showProjectTab(this, 'eap-${projeto.id}')">EAP</div>
-                        <div class="tab" onclick="showProjectTab(this, 'progresso-${projeto.id}')">Progresso</div>
-                        <div class="tab" onclick="showProjectTab(this, 'cronograma-${projeto.id}')">Cronograma</div>
-                        <div class="tab" onclick="showProjectTab(this, 'hht-${projeto.id}')">HHT/Segurança</div>
-                        <div class="tab" onclick="showProjectTab(this, 'curva-${projeto.id}')">Curva S</div>
-                    </div>
-                    <div id="visao-${projeto.id}" class="tab-content" style="display: block;">
-                        <div class="grid-2">
-                            <div><h3>Informações Gerais</h3><table><tr><td><strong>Início:</strong></td><td>${new Date(projeto.inicio).toLocaleDateString()}</td></tr><tr><td><strong>Término:</strong></td><td>${new Date(projeto.fim).toLocaleDateString()}</td></tr><tr><td><strong>Responsável:</strong></td><td>${projeto.responsavel}</td></tr></table></div>
-                            <div><h3>Indicadores</h3><table><tr><td><strong>Progresso:</strong></td><td>${projeto.progresso}%</td></tr><tr><td><strong>Status:</strong></td><td>${projeto.progresso > 70 ? 'Avançado' : projeto.progresso > 30 ? 'Em Andamento' : 'Inicial'}</td></tr></table></div>
-                        </div>
-                    </div>
-                    <div id="eap-${projeto.id}" class="tab-content" style="display: none;"><pre style="background:#1e293b; padding:20px; border-radius:8px;">1.0 Gestão do Projeto\n2.0 Engenharia\n3.0 Suprimentos\n4.0 Montagem\n5.0 Comissionamento</pre></div>
-                    <div id="progresso-${projeto.id}" class="tab-content" style="display: none;"><table><tr><th>Pacote</th><th>Peso</th><th>Progresso</th></tr><tr><td>Engenharia</td><td>15%</td><td><div class="progress"><div class="progress-bar" style="width: ${projeto.progressoPacotes.engenharia}%"></div></div> ${projeto.progressoPacotes.engenharia}%</td></tr><tr><td>Fornecimento</td><td>25%</td><td><div class="progress"><div class="progress-bar" style="width: ${projeto.progressoPacotes.fornecimento}%"></div></div> ${projeto.progressoPacotes.fornecimento}%</td></tr><tr><td>Montagem</td><td>45%</td><td><div class="progress"><div class="progress-bar" style="width: ${projeto.progressoPacotes.montagem}%"></div></div> ${projeto.progressoPacotes.montagem}%</td></tr><tr><td>Comissionamento</td><td>15%</td><td><div class="progress"><div class="progress-bar" style="width: ${projeto.progressoPacotes.comissionamento}%"></div></div> ${projeto.progressoPacotes.comissionamento}%</td></tr></table></div>
-                    <div id="cronograma-${projeto.id}" class="tab-content" style="display: none;"><table><tr><th>Atividade</th><th>Início</th><th>Fim</th><th>Progresso</th></tr>${projeto.cronograma.map(item => `<tr><td>${item.atividade}</td><td>${new Date(item.inicio).toLocaleDateString()}</td><td>${new Date(item.fim).toLocaleDateString()}</td><td><div style="display:flex; gap:10px; align-items:center;"><div class="progress" style="width:100px;"><div class="progress-bar" style="width:${item.progresso}%"></div></div>${item.progresso}%</div></td></tr>`).join('')}</table></div>
-                    <div id="hht-${projeto.id}" class="tab-content" style="display: none;"><div class="grid-2"><div><h3>Horas Trabalhadas</h3><table><tr><td><strong>HH Previstas:</strong></td><td>${projeto.hht.previstas} h</td></tr><tr><td><strong>HH Realizadas:</strong></td><td>${projeto.hht.realizadas} h</td></tr><tr><td><strong>Produtividade:</strong></td><td>${projeto.hht.produtividade}%</td></tr></table></div><div><h3>Segurança</h3><table><tr><td><strong>Dias sem acidente:</strong></td><td>${projeto.hht.diasSemAcidente}</td></tr><tr><td><strong>Taxa de frequência:</strong></td><td>${projeto.hht.taxaFrequencia}</td></tr><tr><td><strong>Taxa de gravidade:</strong></td><td>${projeto.hht.taxaGravidade}</td></tr></table></div></div></div>
-                    <div id="curva-${projeto.id}" class="tab-content" style="display: none;"><div class="chart-container"><canvas id="curvaSChart-${projeto.id}"></canvas></div></div>
-                </div>
-            `).join('');
+        
+        function renderEapPage() {
+            return `<div class="grid-2"><div class="card"><div class="card-header"><h2><i class="fas fa-diagram-project"></i> Estrutura Analítica do Projeto (EAP)</h2></div><div style="max-height:70vh; overflow-y:auto">${renderEapTree(selectedEapNode)}</div></div><div class="card"><div class="card-header"><h2><i class="fas fa-file-alt"></i> Documentos da EAP Selecionada</h2></div><div id="eap-documents-list">${selectedEapNode ? renderDocumentsByEap(selectedEapNode) : '<div style="text-align:center;padding:40px">Selecione um item da EAP</div>'}</div></div></div>`;
         }
-
-        function showProjectTab(element, tabId) {
-            const tabs = element.parentElement.querySelectorAll('.tab');
-            tabs.forEach(t => t.classList.remove('active'));
-            element.classList.add('active');
-            const card = element.closest('.card');
-            card.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-            document.getElementById(tabId).style.display = 'block';
-            if (tabId.includes('curva-')) setTimeout(() => { const projetoId = tabId.split('-')[1]; const projeto = projetos.find(p => p.id == projetoId); if (projeto) renderCurvaSChart(projeto.curvaS, `curvaSChart-${projetoId}`); }, 100);
+        
+        function renderDocumentsByEap(eapCode) {
+            const node = eapStructure.find(n => n.code === eapCode);
+            const docs = getDocumentsByEapCode(eapCode);
+            if (!node) return '<div style="text-align:center;padding:40px">EAP não encontrada</div>';
+            if (docs.length === 0) return `<div style="text-align:center;padding:40px">Nenhum documento para <strong>${node.code} - ${node.name}</strong></div>`;
+            return docs.map(doc => `<div class="document-card"><div class="document-icon"><i class="fas fa-file-pdf"></i></div><div class="document-info"><div class="document-title">${doc.titulo}</div><div class="document-meta"><span><i class="fas fa-calendar"></i> ${new Date(doc.data_upload).toLocaleDateString()}</span></div><div style="font-size:12px">${doc.descricao || ''}</div></div><div class="document-actions"><button class="btn btn-primary btn-sm" onclick="downloadDocument('${doc.arquivo_url}', '${doc.arquivo_nome}')"><i class="fas fa-download"></i></button></div></div>`).join('');
         }
-
-        function renderSS() {
-            return `<div class="card"><div class="card-header"><h2>Abertura de Solicitação de Serviço/Compra</h2></div><div class="grid-2"><div><div class="form-group"><label>Nº SS:</label><input type="text" class="form-control" value="SS2026001" readonly></div><div class="form-group"><label>Solicitante:</label><input type="text" class="form-control" placeholder="Nome"></div><div class="form-group"><label>Data:</label><input type="date" class="form-control" value="${new Date().toISOString().split('T')[0]}"></div></div><div><div class="form-group"><label>Projeto:</label><select class="form-control">${projetos.map(p => `<option>${p.nome}</option>`).join('')}</select></div><div class="form-group"><label>Descrição:</label><textarea class="form-control" rows="3" placeholder="Descreva a solicitação"></textarea></div></div></div><button class="btn btn-primary" onclick="alert('SS aberta com sucesso!')"><i class="fas fa-save"></i> Abrir Solicitação</button></div>`;
+        
+        function selectEapNode(code) { selectedEapNode = code; const div = document.getElementById('eap-documents-list'); if (div) div.innerHTML = renderDocumentsByEap(code); const treeDiv = document.querySelector('.eap-tree'); if (treeDiv) treeDiv.innerHTML = renderEapTree(code); }
+        
+        function renderDocumentosPage() {
+            return `<div class="card"><div class="card-header"><h2><i class="fas fa-folder-open"></i> Todos os Documentos</h2></div><div class="form-group"><label>Filtrar por EAP</label><select class="form-control" id="filterEap" onchange="filterDocuments()"><option value="">Todos</option>${eapStructure.map(node => `<option value="${node.code}">${node.code} - ${node.name}</option>`).join('')}</select></div><div id="all-documents-list">${renderAllDocuments()}</div></div>`;
         }
-
-        function renderOS() {
-            return `<div class="card"><div class="card-header"><h2>Ordem de Serviço</h2></div><div style="border:2px solid #3b82f6; padding:20px; border-radius:8px;"><div class="grid-4"><div><label>N. OS:</label><input class="form-control" value="OS2026001"></div><div><label>N. SS:</label><input class="form-control" value="SS2026001"></div><div><label>DATA:</label><input type="date" class="form-control"></div><div><label>TURNO:</label><select class="form-control"><option>Manhã</option><option>Tarde</option><option>Noite</option></select></div></div><div class="form-group"><label>Descrição:</label><textarea class="form-control" rows="2"></textarea></div><div class="grid-2"><div><label>Técnico:</label><input class="form-control"></div><div><label>Execução:</label><input class="form-control"></div></div><div class="grid-4"><div><label>Data Conclusão:</label><input type="date" class="form-control"></div><div><label>Data Baixa:</label><input type="date" class="form-control"></div><div><label>Hora Início:</label><input type="time" class="form-control"></div><div><label>Hora Fim:</label><input type="time" class="form-control"></div></div><div class="form-group"><label>Materiais:</label><div class="grid-4">${Array.from({length:8}, (_,i)=>`<input class="form-control" placeholder="${i+1}-">`).join('')}</div></div><button class="btn btn-primary" onclick="alert('OS gerada!')"><i class="fas fa-save"></i> Gerar OS</button></div></div>`;
+        
+        function renderAllDocuments(filterEap = '') {
+            let filtered = filterEap ? documentos.filter(d => d.eap_code === filterEap) : documentos;
+            if (filtered.length === 0) return '<div style="text-align:center;padding:40px">Nenhum documento</div>';
+            return filtered.map(doc => `<div class="document-card"><div class="document-icon"><i class="fas fa-file-pdf"></i></div><div class="document-info"><div class="document-title">${doc.titulo}</div><div class="document-meta"><span><i class="fas fa-diagram-project"></i> ${doc.eap_code || 'N/A'}</span><span><i class="fas fa-calendar"></i> ${new Date(doc.data_upload).toLocaleDateString()}</span></div></div><div class="document-actions"><button class="btn btn-primary btn-sm" onclick="downloadDocument('${doc.arquivo_url}', '${doc.arquivo_nome}')"><i class="fas fa-download"></i></button></div></div>`).join('');
         }
-
-        function renderRDO() {
-            return `<div class="card"><div class="card-header"><h2>Gerar Relatório Diário de Obra</h2></div><div style="text-align:center; padding:40px;"><i class="fas fa-file-excel" style="font-size:48px; color:#27ae60;"></i><p style="margin-top:15px;">Funcionalidade disponível com o arquivo RDO BASE.xlsx</p><button class="btn btn-success" onclick="alert('Função RDO em desenvolvimento')"><i class="fas fa-download"></i> Gerar RDO</button></div></div>`;
+        
+        function filterDocuments() { const filter = document.getElementById('filterEap')?.value || ''; const container = document.getElementById('all-documents-list'); if (container) container.innerHTML = renderAllDocuments(filter); }
+        
+        function renderUploadPage() {
+            return `<div class="card"><div class="card-header"><h2><i class="fas fa-upload"></i> Upload de Documentos</h2></div><div class="upload-area" onclick="document.getElementById('fileUpload').click()"><i class="fas fa-cloud-upload-alt"></i><p>Clique para selecionar um arquivo</p><small>PDF, DOC, XLSX, JPG, PNG - até 50MB</small><input type="file" id="fileUpload" style="display:none" accept=".pdf,.doc,.docx,.xlsx,.xls,.jpg,.jpeg,.png" onchange="prepareUpload(this)"></div><div id="uploadForm" style="display:none"><div class="form-group"><label>Título</label><input type="text" class="form-control" id="docTitulo"></div><div class="form-group"><label>Descrição</label><textarea class="form-control" id="docDescricao" rows="2"></textarea></div><div class="grid-2"><div class="form-group"><label>EAP</label><select class="form-control" id="docEap"><option value="">Selecione</option>${eapStructure.map(node => `<option value="${node.code}">${node.code} - ${node.name}</option>`).join('')}</select></div><div class="form-group"><label>Tipo</label><select class="form-control" id="docTipo"><option>RELATORIO</option><option>CONTRATO</option><option>NOTA_FISCAL</option></select></div></div><div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px"><button class="btn btn-secondary" onclick="cancelUpload()">Cancelar</button><button class="btn btn-success" onclick="uploadDocument()"><i class="fas fa-upload"></i> Enviar</button></div></div><div id="selectedFileInfo" style="margin-top:15px; padding:10px; background:#1e293b; border-radius:8px; display:none"><i class="fas fa-file"></i> Arquivo: <strong id="selectedFileName"></strong></div></div>`;
         }
-
-        function renderHHT() {
-            return `<div class="card"><div class="card-header"><h2>HHT e Mão de Obra</h2></div><div class="grid-2"><div><div class="form-group"><label>Projeto:</label><select class="form-control">${projetos.map(p => `<option>${p.nome}</option>`).join('')}</select></div><div class="grid-2"><div><label>Data Início:</label><input type="date" class="form-control"></div><div><label>Data Fim:</label><input type="date" class="form-control"></div></div><button class="btn btn-primary" onclick="alert('Dados carregados')">Carregar</button></div><div><table><tr><td><strong>HH Previstas:</strong></td><td>2.500 h</td></tr><tr><td><strong>HH Realizadas:</strong></td><td>1.875 h</td></tr><tr><td><strong>Produtividade:</strong></td><td>75%</td></tr></table></div></div></div>`;
+        
+        let selectedFile = null;
+        function prepareUpload(input) { selectedFile = input.files[0]; if (selectedFile) { document.getElementById('selectedFileName').textContent = selectedFile.name; document.getElementById('selectedFileInfo').style.display = 'block'; document.getElementById('uploadForm').style.display = 'block'; } }
+        function cancelUpload() { selectedFile = null; document.getElementById('fileUpload').value = ''; document.getElementById('selectedFileInfo').style.display = 'none'; document.getElementById('uploadForm').style.display = 'none'; }
+        
+        async function uploadDocument() {
+            if (!selectedFile) { showInfo('Selecione um arquivo!', 'error'); return; }
+            const titulo = document.getElementById('docTitulo').value;
+            if (!titulo) { showInfo('Informe o título!', 'error'); return; }
+            const eapCode = document.getElementById('docEap').value;
+            if (!eapCode) { showInfo('Selecione a EAP!', 'error'); return; }
+            if (!supabaseClient) supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            showLoading('Enviando...');
+            try {
+                const fileName = `${Date.now()}_${selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                const { error: uploadError } = await supabaseClient.storage.from('documentos').upload(`documentos/${fileName}`, selectedFile);
+                if (uploadError) throw uploadError;
+                const { data: urlData } = supabaseClient.storage.from('documentos').getPublicUrl(`documentos/${fileName}`);
+                const { error: insertError } = await supabaseClient.from('documentos').insert({ titulo: titulo, descricao: document.getElementById('docDescricao').value || '', tipo_documento: document.getElementById('docTipo').value, eap_code: eapCode, arquivo_url: urlData.publicUrl, arquivo_nome: selectedFile.name, tamanho_bytes: selectedFile.size, usuario_upload: 'usuario@fw.com.br', ativo: true });
+                if (insertError) throw insertError;
+                showInfo('Documento enviado!', 'success');
+                cancelUpload();
+                await loadDocumentosFromSupabase();
+                await loadContent('dashboard');
+            } catch (error) { hideLoading(); showInfo('Erro: ' + error.message, 'error'); }
         }
-
-        function renderCronograma() {
-            return `<div class="card"><div class="card-header"><h2>Cronograma - Projetos</h2></div>${projetos.map(projeto => `<div style="margin-bottom:30px;"><h3 style="color:#60a5fa; margin-bottom:15px;">${projeto.nome}</h3><div class="table-responsive"><table><tr><th>Atividade</th><th>Início</th><th>Fim</th><th>Progresso</th></tr>${projeto.cronograma.map(item => `<tr><td>${item.atividade}</td><td>${new Date(item.inicio).toLocaleDateString()}</td><td>${new Date(item.fim).toLocaleDateString()}</td><td><div class="progress" style="width:100px;"><div class="progress-bar" style="width:${item.progresso}%"></div></div> ${item.progresso}%</td></tr>`).join('')}</table></div></div>`).join('')}</div>`;
-        }
-
-        function renderIndicadores() {
-            const totalProgresso = projetos.reduce((sum, p) => sum + p.progresso, 0) / projetos.length;
-            return `<div class="card"><div class="card-header"><h2>Indicadores e Controles</h2></div><div class="grid-2"><div><h3>Progresso Médio</h3><div class="progress" style="margin:15px 0;"><div class="progress-bar" style="width:${totalProgresso}%;"></div></div><div style="text-align:center; font-size:24px; font-weight:bold;">${Math.round(totalProgresso)}%</div></div><div><h3>Distribuição por Status</h3><table><tr><th>Status</th><th>Quantidade</th></tr><tr><td>Avançado (>70%)</td><td>${projetos.filter(p => p.progresso > 70).length}</td></tr><tr><td>Em Andamento (30-70%)</td><td>${projetos.filter(p => p.progresso >= 30 && p.progresso <= 70).length}</td></tr><tr><td>Inicial (<30%)</td><td>${projetos.filter(p => p.progresso < 30).length}</td></tr></table></div></div><div class="grid-2" style="margin-top:20px;"><div><h3>Horas Trabalhadas</h3><table><tr><td><strong>Total Previsto:</strong></td><td>${projetos.reduce((s,p)=>s+p.hht.previstas,0)} h</td></tr><tr><td><strong>Total Realizado:</strong></td><td>${projetos.reduce((s,p)=>s+p.hht.realizadas,0)} h</td></tr><tr><td><strong>Produtividade Geral:</strong></td><td>${Math.round(projetos.reduce((s,p)=>s+p.hht.realizadas,0) / projetos.reduce((s,p)=>s+p.hht.previstas,0) * 100)}%</td></tr></table></div><div><h3>Segurança</h3><table><tr><td><strong>Dias sem acidente (médio):</strong></td><td>${Math.round(projetos.reduce((s,p)=>s+p.hht.diasSemAcidente,0)/projetos.length)}</td></tr><tr><td><strong>Projetos com zero acidentes:</strong></td><td>${projetos.filter(p=>p.hht.taxaFrequencia===0).length}</td></tr></table></div></div></div>`;
-        }
-
-        // PEDIDO DE COMPRA MODULE
+        
+        // ==================== PEDIDO DE COMPRA ====================
         function renderPedidoCompra() {
-            return `
-                <div class="card">
-                    <div class="card-header">
-                        <h2><i class="fas fa-shopping-cart"></i> Pedidos de Compra</h2>
-                        <button class="btn btn-primary" onclick="showNewPoForm()"><i class="fas fa-plus"></i> Novo Pedido</button>
-                    </div>
-                    <div class="tabs">
-                        <div class="tab active" onclick="showPoTab(this, 'lista')">Lista de Pedidos</div>
-                        <div class="tab" onclick="showPoTab(this, 'novo')">Novo Pedido</div>
-                    </div>
-                    <div id="po-lista" class="tab-content" style="display: block;">${renderPoList()}</div>
-                    <div id="po-novo" class="tab-content" style="display: none;">${renderPoForm()}</div>
-                </div>
-            `;
+            return `<div class="card"><div class="card-header"><h2><i class="fas fa-shopping-cart"></i> Pedidos de Compra</h2><button class="btn btn-primary" onclick="showNewPoForm()"><i class="fas fa-plus"></i> Novo Pedido</button></div><div class="tabs"><div class="tab active" onclick="switchPoTab('lista', event)">Lista de Pedidos</div><div class="tab" onclick="switchPoTab('novo', event)">Novo Pedido</div></div><div id="po-lista" class="tab-content active">${renderPoList()}</div><div id="po-novo" class="tab-content">${renderPoForm()}</div></div>`;
         }
-
+        
         function renderPoList() {
-            if (purchaseOrders.length === 0) return '<div style="text-align:center; padding:40px;">Nenhum pedido cadastrado.</div>';
-            return `<div class="table-responsive"><table><thead><tr><th>Nº</th><th>Data</th><th>Fornecedor</th><th>Centro Custo</th><th>Total</th><th>Status</th><th>Ações</th></tr></thead><tbody>${purchaseOrders.map(po => { const total = po.items.reduce((s,i)=>s+i.total,0)-po.desconto+po.frete; const statusClass = po.status==='Aprovado'?'badge-success':(po.status==='Cancelado'?'badge-danger':'badge-warning'); return `<tr><td><strong>${po.numero}</strong></td><td>${new Date(po.data).toLocaleDateString()}</td><td>${po.fornecedor.substring(0,30)}</td><td>${po.centroCusto.substring(0,30)}</td><td><strong>R$ ${total.toFixed(2)}</strong></td><td><span class="po-status ${statusClass}">${po.status}</span></td><td class="action-buttons"><button class="btn btn-secondary btn-sm" onclick="viewPoDetails(${po.id})"><i class="fas fa-eye"></i> Ver</button><button class="btn btn-success btn-sm" onclick="exportPoToExcel(${po.id})"><i class="fas fa-file-excel"></i> Excel</button><button class="btn btn-danger btn-sm" onclick="deletePo(${po.id})"><i class="fas fa-trash"></i> Excluir</button></td></tr>`}).join('')}</tbody></table></div>`;
+            if (purchaseOrders.length === 0) return '<div style="text-align:center;padding:40px">Nenhum pedido</div>';
+            return `<div class="table-responsive"><table style="width:100%"><thead><tr><th>Nº</th><th>Data</th><th>Fornecedor</th><th>Centro Custo</th><th>Total</th><th>Status</th><th>Ações</th> </thead><tbody>${purchaseOrders.map(po => {
+                let total = po.items.reduce((s,i)=>s+i.total,0) - po.desconto + po.frete;
+                let statusClass = po.status === 'Aprovado' ? 'badge-success' : (po.status === 'Cancelado' ? 'badge-danger' : 'badge-warning');
+                return `<tr><td><strong>${po.numero}</strong><td>${new Date(po.data).toLocaleDateString()}<td>${po.fornecedor.substring(0,30)}<td>${po.centroCusto.substring(0,25)}<td><strong>R$ ${total.toFixed(2)}</strong><td><span class="badge ${statusClass}">${po.status}</span><td class="action-buttons"><button class="btn btn-secondary btn-sm" onclick="viewPo(${po.id})"><i class="fas fa-eye"></i></button><button class="btn btn-success btn-sm" onclick="exportPoToExcel(${po.id})"><i class="fas fa-file-excel"></i></button><button class="btn btn-danger btn-sm" onclick="deletePo(${po.id})"><i class="fas fa-trash"></i></button>`;
+            }).join('')}</tbody></table></div>`;
         }
-
+        
         function renderPoForm() {
-            return `<form id="poForm" onsubmit="savePurchaseOrder(event)"><div class="grid-2"><div><div class="form-group"><label>Nº Pedido:</label><input type="text" class="form-control" id="poNumero" value="${nextPoId}" readonly></div><div class="form-group"><label>Data:</label><input type="date" class="form-control" id="poData" value="${new Date().toISOString().split('T')[0]}" required></div><div class="form-group"><label>Fornecedor:</label><input type="text" class="form-control" id="poFornecedor" placeholder="Nome do fornecedor" required></div><div class="form-group"><label>CNPJ:</label><input type="text" class="form-control" id="poCnpj" placeholder="00.000.000/0001-00"></div><div class="form-group"><label>Vendedor:</label><input type="text" class="form-control" id="poVendedor" placeholder="Nome do vendedor"></div></div><div><div class="form-group"><label>Centro de Custo:</label><select class="form-control" id="poCentroCusto"><option value="">Selecione...</option>${projetos.map(p => `<option value="${p.nome}">${p.nome}</option>`).join('')}<option value="PC 4501089929 - ANDRITZ - Bracell Lençóis Paulista - Montagem Tissue">PC 4501089929 - ANDRITZ</option></select></div><div class="form-group"><label>Requisitante:</label><input type="text" class="form-control" id="poRequisitante" placeholder="Nome"></div><div class="form-group"><label>Condição Pagamento:</label><select class="form-control" id="poCondicaoPagamento"><option>Boleto</option><option>Transferência</option><option>Pix</option></select></div><div class="form-group"><label>Status:</label><select class="form-control" id="poStatus"><option>Em Andamento</option><option>Aprovado</option><option>Cancelado</option></select></div></div></div><div class="card-header"><h2>Itens</h2><button type="button" class="btn btn-primary" onclick="addPoItem()">+ Adicionar</button></div><div id="poItemsContainer"><div class="po-item-row"><div class="grid-4"><div><label>Descrição</label><input type="text" class="form-control" placeholder="Descrição"></div><div><label>Unidade</label><input type="text" class="form-control" placeholder="und"></div><div><label>Qtd</label><input type="number" class="form-control" value="1" onchange="updatePoTotal()"></div><div><label>Preço Unit.</label><input type="number" class="form-control" step="0.01" value="0" onchange="updatePoTotal()"></div></div></div></div><div class="grid-2"><div><div class="form-group"><label>Desconto (R$):</label><input type="number" class="form-control" id="poDesconto" step="0.01" value="0" onchange="updatePoTotal()"></div><div class="form-group"><label>Frete (R$):</label><input type="number" class="form-control" id="poFrete" step="0.01" value="0" onchange="updatePoTotal()"></div></div><div style="text-align:right;"><h3>Total: <span id="poTotalPreview" class="total-value">R$ 0.00</span></h3></div></div><div style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;"><button type="button" class="btn btn-secondary" onclick="clearPoForm()">Limpar</button><button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Salvar</button></div></form>`;
+            return `<form onsubmit="savePurchaseOrder(event)"><div class="grid-2"><div><div class="form-group"><label>Nº Pedido</label><input type="text" class="form-control" id="poNumero" value="${nextPoId}" readonly></div><div class="form-group"><label>Data</label><input type="date" class="form-control" id="poData" value="${new Date().toISOString().split('T')[0]}" required></div><div class="form-group"><label>Fornecedor</label><input type="text" class="form-control" id="poFornecedor" required></div><div class="form-group"><label>CNPJ</label><input type="text" class="form-control" id="poCnpj"></div><div class="form-group"><label>Vendedor</label><input type="text" class="form-control" id="poVendedor"></div></div><div><div class="form-group"><label>Centro de Custo</label><select class="form-control" id="poCentroCusto"><option value="">Selecione</option><option>PC 4501089929 - ANDRITZ - Bracell Lençóis Paulista - Montagem Tissue</option></select></div><div class="form-group"><label>Requisitante</label><input type="text" class="form-control" id="poRequisitante"></div><div class="form-group"><label>Condição Pagamento</label><select class="form-control" id="poCondicaoPagamento"><option>Boleto</option><option>Transferência</option><option>Pix</option></select></div><div class="form-group"><label>Status</label><select class="form-control" id="poStatus"><option>Em Andamento</option><option>Aprovado</option><option>Cancelado</option></select></div></div></div><div class="card-header"><h2>Itens</h2><button type="button" class="btn btn-primary btn-sm" onclick="addPoItem()"><i class="fas fa-plus"></i> Adicionar</button></div><div id="poItemsContainer"><div class="po-item-row"><div class="grid-4"><input type="text" class="form-control" placeholder="Descrição"><input type="text" class="form-control" placeholder="Unid" style="width:80px"><input type="number" class="form-control" placeholder="Qtd" value="1" style="width:100px"><input type="number" class="form-control" placeholder="Preço Unit." step="0.01" value="0" style="width:120px"></div></div></div><div class="grid-2"><div><div class="form-group"><label>Desconto (R$)</label><input type="number" class="form-control" id="poDesconto" value="0" onchange="updatePoTotal()"></div><div class="form-group"><label>Frete (R$)</label><input type="number" class="form-control" id="poFrete" value="0" onchange="updatePoTotal()"></div></div><div style="text-align:right"><h3>Total: <span id="poTotalPreview" class="total-value">R$ 0.00</span></h3></div></div><div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px"><button type="button" class="btn btn-secondary" onclick="clearPoForm()">Limpar</button><button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Salvar</button></div></form>`;
         }
-
+        
         function addPoItem() {
-            const container = document.getElementById('poItemsContainer');
-            const newItem = document.createElement('div');
-            newItem.className = 'po-item-row';
-            newItem.innerHTML = `<div class="grid-4"><div><label>Descrição</label><input type="text" class="form-control" placeholder="Descrição"></div><div><label>Unidade</label><input type="text" class="form-control" placeholder="und"></div><div><label>Qtd</label><input type="number" class="form-control" value="1" onchange="updatePoTotal()"></div><div><label>Preço Unit.</label><input type="number" class="form-control" step="0.01" value="0" onchange="updatePoTotal()"></div></div><div style="text-align:right;"><span class="item-remove" onclick="this.parentElement.parentElement.remove(); updatePoTotal();"><i class="fas fa-trash"></i> Remover</span></div>`;
-            container.appendChild(newItem);
+            let container = document.getElementById('poItemsContainer');
+            if (!container) return;
+            let div = document.createElement('div');
+            div.className = 'po-item-row';
+            div.innerHTML = `<div class="grid-4"><input type="text" class="form-control" placeholder="Descrição"><input type="text" class="form-control" placeholder="Unid" style="width:80px"><input type="number" class="form-control" placeholder="Qtd" value="1" style="width:100px"><input type="number" class="form-control" placeholder="Preço Unit." step="0.01" value="0" style="width:120px"></div><div style="text-align:right"><span class="item-remove" onclick="this.parentElement.parentElement.remove(); updatePoTotal()"><i class="fas fa-trash"></i> Remover</span></div>`;
+            container.appendChild(div);
         }
-
+        
         function updatePoTotal() {
             let total = 0;
             document.querySelectorAll('#poItemsContainer .po-item-row').forEach(row => {
-                const qtd = parseFloat(row.querySelector('input[placeholder*="Qtd"]')?.value) || 0;
-                const preco = parseFloat(row.querySelector('input[placeholder*="Preço"]')?.value) || 0;
+                let qtd = parseFloat(row.querySelector('input[placeholder*="Qtd"]')?.value) || 0;
+                let preco = parseFloat(row.querySelector('input[placeholder*="Preço Unit"]')?.value) || 0;
                 total += qtd * preco;
             });
-            const desconto = parseFloat(document.getElementById('poDesconto')?.value) || 0;
-            const frete = parseFloat(document.getElementById('poFrete')?.value) || 0;
-            const preview = document.getElementById('poTotalPreview');
-            if (preview) preview.textContent = `R$ ${(total - desconto + frete).toFixed(2)}`;
+            let desconto = parseFloat(document.getElementById('poDesconto')?.value) || 0;
+            let totalSpan = document.getElementById('poTotalPreview');
+            if (totalSpan) totalSpan.textContent = `R$ ${(total - desconto).toFixed(2)}`;
         }
-
-        function savePurchaseOrder(event) {
-            event.preventDefault();
-            const items = [];
+        
+        function savePurchaseOrder(e) {
+            e.preventDefault();
+            let items = [];
             document.querySelectorAll('#poItemsContainer .po-item-row').forEach(row => {
-                const descricao = row.querySelector('input[placeholder*="Descrição"]')?.value;
-                const unidade = row.querySelector('input[placeholder*="Unidade"]')?.value;
-                const quantidade = parseFloat(row.querySelector('input[placeholder*="Qtd"]')?.value) || 0;
-                const preco = parseFloat(row.querySelector('input[placeholder*="Preço"]')?.value) || 0;
-                if (descricao && quantidade > 0 && preco > 0) items.push({ descricao, unidade: unidade || 'und', quantidade, precoUnitario: preco, total: quantidade * preco });
+                let desc = row.querySelector('input[placeholder*="Descrição"]')?.value;
+                let unid = row.querySelector('input[placeholder*="Unid"]')?.value || 'und';
+                let qtd = parseFloat(row.querySelector('input[placeholder*="Qtd"]')?.value) || 0;
+                let preco = parseFloat(row.querySelector('input[placeholder*="Preço Unit"]')?.value) || 0;
+                if (desc && qtd > 0 && preco > 0) items.push({ descricao: desc, unidade: unid, quantidade: qtd, precoUnitario: preco, total: qtd * preco });
             });
-            if (items.length === 0) { alert('Adicione pelo menos um item!'); return; }
+            if (items.length === 0) { showInfo('Adicione pelo menos um item!', 'error'); return; }
             purchaseOrders.push({ id: nextPoId, numero: nextPoId.toString(), data: document.getElementById('poData').value, fornecedor: document.getElementById('poFornecedor').value, cnpj: document.getElementById('poCnpj').value, vendedor: document.getElementById('poVendedor').value, centroCusto: document.getElementById('poCentroCusto').value, requisitante: document.getElementById('poRequisitante').value, condicaoPagamento: document.getElementById('poCondicaoPagamento').value, status: document.getElementById('poStatus').value, items, desconto: parseFloat(document.getElementById('poDesconto').value) || 0, frete: parseFloat(document.getElementById('poFrete').value) || 0 });
             nextPoId++;
-            alert(`Pedido ${nextPoId-1} criado!`);
+            showInfo(`Pedido ${nextPoId-1} criado!`, 'success');
             clearPoForm();
-            showPoTab(document.querySelector('#po-lista + .tab'), 'lista');
+            switchPoTab('lista');
             document.getElementById('po-lista').innerHTML = renderPoList();
-            showInfo(`Pedido criado com sucesso!`, 'success');
         }
-
+        
         function clearPoForm() {
-            document.getElementById('poFornecedor').value = '';
-            document.getElementById('poCnpj').value = '';
-            document.getElementById('poVendedor').value = '';
-            document.getElementById('poCentroCusto').value = '';
-            document.getElementById('poRequisitante').value = '';
-            document.getElementById('poDesconto').value = '0';
-            document.getElementById('poFrete').value = '0';
-            document.getElementById('poItemsContainer').innerHTML = `<div class="po-item-row"><div class="grid-4"><div><label>Descrição</label><input type="text" class="form-control" placeholder="Descrição"></div><div><label>Unidade</label><input type="text" class="form-control" placeholder="und"></div><div><label>Qtd</label><input type="number" class="form-control" value="1"></div><div><label>Preço Unit.</label><input type="number" class="form-control" step="0.01" value="0"></div></div></div>`;
+            ['poFornecedor', 'poCnpj', 'poVendedor', 'poCentroCusto', 'poRequisitante'].forEach(f => { const el = document.getElementById(f); if (el) el.value = ''; });
+            const desconto = document.getElementById('poDesconto'); if (desconto) desconto.value = '0';
+            const frete = document.getElementById('poFrete'); if (frete) frete.value = '0';
+            const container = document.getElementById('poItemsContainer');
+            if (container) container.innerHTML = `<div class="po-item-row"><div class="grid-4"><input type="text" class="form-control" placeholder="Descrição"><input type="text" class="form-control" placeholder="Unid" style="width:80px"><input type="number" class="form-control" placeholder="Qtd" value="1" style="width:100px"><input type="number" class="form-control" placeholder="Preço Unit." step="0.01" value="0" style="width:120px"></div></div>`;
             updatePoTotal();
         }
-
-        function viewPoDetails(poId) {
-            const po = purchaseOrders.find(p => p.id === poId);
-            if (!po) return;
-            const total = po.items.reduce((s,i)=>s+i.total,0)-po.desconto+po.frete;
-            alert(`PEDIDO Nº ${po.numero}\nData: ${new Date(po.data).toLocaleDateString()}\nFornecedor: ${po.fornecedor}\nTotal: R$ ${total.toFixed(2)}\nStatus: ${po.status}\nItens: ${po.items.length}`);
-        }
-
-        async function exportPoToExcel(poId) {
-            const po = purchaseOrders.find(p => p.id === poId);
-            if (!po) { alert('Pedido não encontrado!'); return; }
-            showInfo('Gerando Excel...', 'info');
+        
+        function viewPo(id) { let po = purchaseOrders.find(p => p.id === id); if (po) alert(`Pedido ${po.numero}\nFornecedor: ${po.fornecedor}\nTotal: R$ ${(po.items.reduce((s,i)=>s+i.total,0)-po.desconto).toFixed(2)}`); }
+        
+        async function exportPoToExcel(id) {
+            let po = purchaseOrders.find(p => p.id === id);
+            if (!po) { showInfo('Pedido não encontrado!', 'error'); return; }
+            showLoading('Gerando Excel...');
             try {
-                const workbook = new ExcelJS.Workbook();
-                const ws = workbook.addWorksheet('Pedido de Compra');
-                ws.getCell('A1').value = 'PEDIDO DE COMPRA'; ws.mergeCells('A1:E1'); ws.getCell('A1').font = { bold: true, size: 16 };
-                ws.getCell('A3').value = 'Nº:'; ws.getCell('B3').value = po.numero;
-                ws.getCell('A4').value = 'Data:'; ws.getCell('B4').value = new Date(po.data).toLocaleDateString();
-                ws.getCell('A5').value = 'Fornecedor:'; ws.getCell('B5').value = po.fornecedor;
-                ws.getCell('A6').value = 'CNPJ:'; ws.getCell('B6').value = po.cnpj;
-                ws.getCell('A7').value = 'Centro Custo:'; ws.getCell('B7').value = po.centroCusto;
-                ws.getCell('A9').value = 'Descrição'; ws.getCell('B9').value = 'Unid'; ws.getCell('C9').value = 'Qtd'; ws.getCell('D9').value = 'Preço'; ws.getCell('E9').value = 'Total';
-                ws.getRow(9).font = { bold: true };
-                po.items.forEach((item, i) => {
-                    ws.getCell(10+i,1).value = item.descricao;
-                    ws.getCell(10+i,2).value = item.unidade;
-                    ws.getCell(10+i,3).value = item.quantidade;
-                    ws.getCell(10+i,4).value = item.precoUnitario;
-                    ws.getCell(10+i,5).value = item.total;
+                let response = await fetch('PC BASE.xlsx');
+                let workbook = new ExcelJS.Workbook();
+                if (response.ok) {
+                    let arrayBuffer = await response.arrayBuffer();
+                    await workbook.xlsx.load(arrayBuffer);
+                } else {
+                    workbook = new ExcelJS.Workbook();
+                    workbook.addWorksheet('Pedido de Compra');
+                }
+                let worksheet = workbook.getWorksheet(1) || workbook.addWorksheet('Pedido de Compra');
+                worksheet.getCell('C3').value = `PEDIDO DE COMPRA Nº ${po.numero}`;
+                worksheet.getCell('B8').value = po.fornecedor;
+                worksheet.getCell('B9').value = `CNPJ: ${po.cnpj || ''}`;
+                worksheet.getCell('D12').value = po.centroCusto;
+                worksheet.getCell('H12').value = po.requisitante;
+                worksheet.getCell('H13').value = new Date(po.data).toLocaleDateString();
+                worksheet.getCell('B17').value = po.fornecedor;
+                worksheet.getCell('H20').value = po.condicaoPagamento;
+                let startRow = 24;
+                po.items.forEach((item, idx) => {
+                    worksheet.getCell(`A${startRow + idx}`).value = item.descricao;
+                    worksheet.getCell(`B${startRow + idx}`).value = item.unidade;
+                    worksheet.getCell(`C${startRow + idx}`).value = item.quantidade;
+                    worksheet.getCell(`D${startRow + idx}`).value = item.precoUnitario;
+                    worksheet.getCell(`E${startRow + idx}`).value = item.total;
                 });
-                const subtotal = po.items.reduce((s,i)=>s+i.total,0);
-                const totalRow = 10 + po.items.length;
-                ws.getCell(totalRow,4).value = 'Subtotal:'; ws.getCell(totalRow,5).value = subtotal;
-                ws.getCell(totalRow+1,4).value = 'Desconto:'; ws.getCell(totalRow+1,5).value = po.desconto;
-                ws.getCell(totalRow+2,4).value = 'Frete:'; ws.getCell(totalRow+2,5).value = po.frete;
-                ws.getCell(totalRow+3,4).value = 'TOTAL:'; ws.getCell(totalRow+3,5).value = subtotal - po.desconto + po.frete;
-                ws.getCell(totalRow+3,5).font = { bold: true };
-                ws.columns = [{ width: 40 }, { width: 10 }, { width: 12 }, { width: 15 }, { width: 15 }];
-                const buffer = await workbook.xlsx.writeBuffer();
+                let subtotal = po.items.reduce((s,i)=>s+i.total,0);
+                let totalRow = startRow + po.items.length;
+                worksheet.getCell(`D${totalRow}`).value = 'SUBTOTAL';
+                worksheet.getCell(`E${totalRow}`).value = subtotal;
+                worksheet.getCell(`D${totalRow+1}`).value = 'DESCONTO';
+                worksheet.getCell(`E${totalRow+1}`).value = po.desconto;
+                worksheet.getCell(`D${totalRow+2}`).value = 'FRETE';
+                worksheet.getCell(`E${totalRow+2}`).value = po.frete;
+                worksheet.getCell(`D${totalRow+3}`).value = 'TOTAL';
+                worksheet.getCell(`E${totalRow+3}`).value = subtotal - po.desconto + po.frete;
+                let buffer = await workbook.xlsx.writeBuffer();
                 saveAs(new Blob([buffer]), `Pedido_Compra_${po.numero}.xlsx`);
-                showInfo(`Pedido ${po.numero} exportado!`, 'success');
-            } catch (error) { alert('Erro: ' + error.message); }
+                showInfo('Excel gerado com sucesso!', 'success');
+            } catch (error) { hideLoading(); showInfo('Erro: ' + error.message, 'error'); }
+            hideLoading();
         }
-
-        function deletePo(poId) {
-            if (confirm('Excluir este pedido?')) {
-                purchaseOrders = purchaseOrders.filter(p => p.id !== poId);
-                document.getElementById('po-lista').innerHTML = renderPoList();
-                showInfo('Pedido excluído!', 'success');
+        
+        function deletePo(id) { if (confirm('Excluir este pedido?')) { purchaseOrders = purchaseOrders.filter(p => p.id !== id); document.getElementById('po-lista').innerHTML = renderPoList(); showInfo('Pedido excluído!', 'success'); } }
+        function showNewPoForm() { switchPoTab('novo'); clearPoForm(); }
+        function switchPoTab(tab, event) {
+            if (event && event.currentTarget) { document.querySelectorAll('#pedido_compra .tabs .tab, .card .tabs .tab').forEach(t => t.classList.remove('active')); event.currentTarget.classList.add('active'); }
+            const listaDiv = document.getElementById('po-lista'), novoDiv = document.getElementById('po-novo');
+            if (listaDiv && novoDiv) { if (tab === 'lista') { listaDiv.classList.add('active'); novoDiv.classList.remove('active'); } else { novoDiv.classList.add('active'); listaDiv.classList.remove('active'); } }
+        }
+        
+        function downloadDocument(url, nome) { window.open(url, '_blank'); showInfo(`Abrindo ${nome}`, 'success'); }
+        
+        async function changePage(page, event) {
+            if (event && event.currentTarget) {
+                document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+                event.currentTarget.classList.add('active');
             }
+            const titles = { dashboard: 'Dashboard EAP', eap: 'EAP - Estrutura Analítica', documentos: 'Documentos', upload: 'Upload de Documentos', pedido_compra: 'Pedido de Compra' };
+            document.getElementById('pageTitle').textContent = titles[page] || page;
+            await loadContent(page);
         }
-
-        function showNewPoForm() { showPoTab(document.querySelector('#po-novo + .tab'), 'novo'); }
-        function showPoTab(element, tabId) {
-            const tabs = element.parentElement.querySelectorAll('.tab');
-            tabs.forEach(t => t.classList.remove('active'));
-            element.classList.add('active');
-            const card = element.closest('.card');
-            card.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-            document.getElementById(`po-${tabId}`).style.display = 'block';
-            if (tabId === 'novo') clearPoForm();
+        
+        async function loadContent(page) {
+            const area = document.getElementById('contentArea');
+            if (!area) return;
+            area.style.opacity = '0';
+            setTimeout(async () => {
+                if (page === 'dashboard') area.innerHTML = renderDashboard();
+                else if (page === 'eap') area.innerHTML = renderEapPage();
+                else if (page === 'documentos') area.innerHTML = renderDocumentosPage();
+                else if (page === 'upload') area.innerHTML = renderUploadPage();
+                else if (page === 'pedido_compra') area.innerHTML = renderPedidoCompra();
+                area.style.opacity = '1';
+            }, 200);
         }
-
+        
         window.changePage = changePage;
-        window.showProjectTab = showProjectTab;
+        window.selectEapNode = selectEapNode;
+        window.filterDocuments = filterDocuments;
+        window.downloadDocument = downloadDocument;
+        window.prepareUpload = prepareUpload;
+        window.cancelUpload = cancelUpload;
+        window.uploadDocument = uploadDocument;
+        window.showNewPoForm = showNewPoForm;
         window.addPoItem = addPoItem;
         window.updatePoTotal = updatePoTotal;
         window.savePurchaseOrder = savePurchaseOrder;
         window.clearPoForm = clearPoForm;
-        window.viewPoDetails = viewPoDetails;
+        window.viewPo = viewPo;
         window.exportPoToExcel = exportPoToExcel;
         window.deletePo = deletePo;
-        window.showNewPoForm = showNewPoForm;
-        window.showPoTab = showPoTab;
-
-        window.onload = async function () {
-            updateLoadingProgress(20, 'Carregando módulos...');
-            await new Promise(r => setTimeout(r, 200));
-            updateLoadingProgress(50, 'Carregando projetos e Curva S...');
-            await new Promise(r => setTimeout(r, 200));
-            updateLoadingProgress(80, 'Preparando interface...');
-            await new Promise(r => setTimeout(r, 200));
-            updateLoadingProgress(100, 'Sistema pronto!');
-            await new Promise(r => setTimeout(r, 500));
+        window.switchPoTab = switchPoTab;
+        
+        window.onload = async () => {
+            showLoading('Carregando sistema...');
+            await loadDocumentosFromSupabase();
             hideLoading();
-            loadContent('dashboard');
-            showInfo('Sistema carregado com sucesso! Módulo Pedido de Compra disponível.', 'success');
+            await loadContent('dashboard');
+            showInfo(`Sistema carregado! ${documentos.length} documentos encontrados.`, 'success');
         };
     </script>
 </body>
-
 </html>
